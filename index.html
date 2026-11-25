@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1330">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Bobo TV</title>
+<style>
+:root{--bg:#0e1330;--panel:#171e45;--ink:#eef0ff;--mute:#9aa3d6;--acc:#ffc233;--acc-ink:#241a00;--aqua:#3fe0cc;--rule:#2a3361;--danger:#ff6b7d}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,'Segoe UI',sans-serif}
+section{height:100%;display:flex;flex-direction:column;max-width:520px;margin:0 auto;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+[hidden]{display:none!important}
+h1{font-size:32px;line-height:1.15;margin:8px 0}
+.logo{font-weight:800;font-size:24px}
+#login{justify-content:center;gap:14px;padding:24px}
+#login p{margin:0;color:var(--mute)}
+.chk{display:flex;gap:10px;font-size:15px}.chk input{width:20px;height:20px;accent-color:var(--acc)}
+button{font:inherit;font-weight:700;border:0;border-radius:999px;padding:13px 20px;background:var(--acc);color:var(--acc-ink)}
+button:disabled{opacity:.35}
+header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px}
+#on{font-size:13px;color:var(--aqua);font-weight:700}
+.sel{display:flex;gap:8px;padding:0 14px 8px}
+.sel label{flex:1;font-size:12px;color:var(--mute);display:flex;flex-direction:column;gap:2px;min-width:0}
+select{font:inherit;font-size:14px;padding:7px 8px;border-radius:10px;border:1.5px solid var(--rule);background:var(--panel);color:var(--ink);width:100%}
+.stage{flex:1;min-height:0;padding:0 14px}
+.rm{position:relative;height:100%;border-radius:14px;overflow:hidden;background:#080b1f;border:1.5px solid var(--rule)}
+#rv{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#who{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:24px;color:#cfd5ff}
+#rp{position:absolute;top:10px;right:10px;padding:8px 12px;background:rgba(0,0,0,.55);color:#fff;font-size:14px}
+.cap{position:absolute;left:10px;right:10px;bottom:10px;background:rgba(8,12,30,.85);border-radius:10px;padding:10px 12px}
+.cap em{font-style:normal;color:var(--aqua);font-size:12px;display:block}
+.cap small{display:block;color:#aab3e6}.cap p{margin:0;font-size:18px;font-weight:700}
+.me{position:absolute;top:10px;left:10px;width:86px;height:116px;border-radius:10px;overflow:hidden;background:#000;border:2px solid var(--acc)}
+.me video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+.bar{padding:10px 14px 0}
+.tbtn{width:100%;background:var(--panel);color:var(--ink);border:2px solid var(--aqua)}
+.tbtn[aria-pressed="true"]{background:var(--aqua);color:#04201c}
+.ctl{display:flex;gap:8px;padding:10px 14px 14px}.ctl button{flex:1}
+#bx{background:var(--danger);color:#fff}#bn{background:var(--aqua);color:#04201c}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:90px;background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:14px;max-width:90%;text-align:center}
+</style>
+</head>
+<body>
+<section id="login">
+<div class="logo">Bobo TV</div>
+<h1>Meet someone new with one tap</h1>
+<p>Live video chat with real people. AI translates what they say.</p>
+<label class="chk"><input type="checkbox" id="age"><span>I am 18 or older and agree to the rules: no nudity, harassment or illegal content.</span></label>
+<div id="gbtn"></div>
+<button id="dev" hidden disabled>Continue (dev mode)</button>
+</section>
+
+<section id="chat" hidden>
+<header><div class="logo">Bobo</div><span id="on"></span></header>
+<div class="sel">
+<label>I am in<select id="mc"></select></label>
+<label>Meet people from<select id="fc"></select></label>
+<label>My language<select id="ml"></select></label>
+</div>
+<div class="stage"><div class="rm">
+<video id="rv" autoplay playsinline></video>
+<div id="who">Press Start to meet someone</div>
+<button id="rp" hidden>Report</button>
+<div class="cap" id="cap" hidden><em id="ce"></em><small id="co"></small><p id="ct"></p></div>
+<div class="me"><video id="lv" autoplay muted playsinline></video></div>
+</div></div>
+<div class="bar"><button class="tbtn" id="tr" aria-pressed="true">🌐 AI Translate: ON</button></div>
+<div class="ctl"><button id="bs">Start</button><button id="bx" disabled>Stop</button><button id="bn" disabled>Next</button></div>
+</section>
+<div id="toast" hidden></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const CO=['Saudi Arabia','Egypt','Turkey','Brazil','Japan','France','Spain','Germany','India','United States','United Kingdom','Mexico','Indonesia','Russia','Italy','Nigeria'];
+const LG=['English','Arabic','Spanish','French','Turkish','German','Japanese','Portuguese','Hindi','Russian','Chinese','Korean','Italian','Indonesian','Urdu','Persian','Bengali','Dutch','Polish','Ukrainian','Thai','Vietnamese','Swahili','Hebrew'];
+$('#mc').innerHTML=CO.map(c=>`<option>${c}</option>`).join('');
+$('#fc').innerHTML='<option value="all">Anywhere</option>'+CO.map(c=>`<option>${c}</option>`).join('');
+$('#ml').innerHTML=LG.map(c=>`<option>${c}</option>`).join('');
+if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
+
+let cfg={},ws=null,pc=null,ch=null,stream=null,rec=null,st='idle',tOn=true,tid=0,q=Promise.resolve(),cred='';
+const say=m=>{const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(say.t);say.t=setTimeout(()=>t.hidden=true,2800)};
+const status=m=>{$('#who').textContent=m;$('#who').hidden=!m};
+const tx=o=>ws&&ws.readyState===1&&ws.send(JSON.stringify(o));
+function ui(){$('#bs').disabled=st!=='idle';$('#bx').disabled=st==='idle';$('#bn').disabled=st==='idle';$('#rp').hidden=st!=='on';if(st!=='on')$('#cap').hidden=true}
+
+fetch('/config').then(r=>r.json()).then(c=>{
+  cfg=c;
+  if(c.gid){
+    const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.onload=()=>{
+      google.accounts.id.initialize({client_id:c.gid,callback:r=>connect(r.credential)});
+      google.accounts.id.renderButton($('#gbtn'),{theme:'filled_blue',size:'large',text:'continue_with',width:280});
+      $('#gbtn').style.pointerEvents='none';$('#gbtn').style.opacity='.4';
+    };document.head.appendChild(s);
+  }else{$('#dev').hidden=false}
+});
+$('#age').onchange=e=>{const on=e.target.checked;$('#dev').disabled=!on;$('#gbtn').style.pointerEvents=on?'auto':'none';$('#gbtn').style.opacity=on?'1':'.4'};
+$('#dev').onclick=()=>connect('');
+
+function connect(c){
+  cred=c;
+  ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws');
+  ws.onopen=()=>tx({t:'auth',cred:c,adult:true});
+  ws.onmessage=e=>onMsg(JSON.parse(e.data));
+  ws.onclose=()=>{if(st!=='idle')endAll();say('Connection lost. Reload to reconnect.')};
+}
+function onMsg(m){
+  if(m.t==='ready'){$('#login').hidden=true;$('#chat').hidden=false;ui()}
+  else if(m.t==='denied'){say(m.why);endAll();$('#login').hidden=false;$('#chat').hidden=true}
+  else if(m.t==='online')$('#on').textContent=m.n+' online';
+  else if(m.t==='match')startCall(m.init,m.c);
+  else if(m.t==='sig')handleSig(m.d);
+  else if(m.t==='bye'){endCall();if(st!=='idle')find()}
+  else if(m.t==='tr')showTr(m);
+}
+function find(){st='search';ui();status('Looking for someone…');tx({t:'find',c:$('#mc').value,f:$('#fc').value})}
+function startCall(init,country){
+  endCall();q=Promise.resolve();
+  pc=new RTCPeerConnection({iceServers:cfg.ice});
+  stream.getTracks().forEach(t=>pc.addTrack(t,stream));
+  pc.ontrack=e=>{$('#rv').srcObject=e.streams[0]};
+  pc.onicecandidate=e=>e.candidate&&tx({t:'sig',d:{c:e.candidate}});
+  const p=pc;
+  pc.onconnectionstatechange=()=>{
+    if(pc!==p)return;
+    if(p.connectionState==='connected'){st='on';status('');ui();say('Connected'+(country?' · '+country:''))}
+    else if(p.connectionState==='failed'){endCall();find()}
+  };
+  status('Connecting…');
+  if(init){
+    ch=pc.createDataChannel('t');setCh();
+    pc.createOffer().then(o=>pc.setLocalDescription(o)).then(()=>tx({t:'sig',d:{s:pc.localDescription}}));
+  }else pc.ondatachannel=e=>{ch=e.channel;setCh()};
+}
+function handleSig(d){
+  q=q.then(async()=>{
+    if(!pc)return;
+    if(d.s){
+      await pc.setRemoteDescription(d.s);
+      if(d.s.type==='offer'){await pc.setLocalDescription(await pc.createAnswer());tx({t:'sig',d:{s:pc.localDescription}})}
+    }else if(d.c)await pc.addIceCandidate(d.c);
+  }).catch(()=>{});
+}
+function endCall(){if(pc){const p=pc;pc=null;try{p.close()}catch(e){}}ch=null;$('#rv').srcObject=null;$('#cap').hidden=true}
+function endAll(){endCall();stopRec();if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}$('#lv').srcObject=null;st='idle';status('Press Start to meet someone');ui()}
+
+function setCh(){ch.onmessage=e=>{try{onText(String(JSON.parse(e.data).t||'').slice(0,500))}catch(x){}}}
+const pend={};
+function onText(text){
+  if(!text)return;
+  $('#ce').hidden=true;$('#co').textContent='';$('#ct').textContent=text;$('#cap').hidden=false;
+  if(tOn&&cfg.translate){const id=++tid;pend[id]=text;tx({t:'tr',id,text,lang:$('#ml').value})}
+}
+function showTr(m){
+  const text=pend[m.id];delete pend[m.id];
+  if(!tOn||st!=='on'||!m.out)return;
+  const k=m.out.indexOf('|'),out=k>0?m.out.slice(k+1).trim():m.out,det=k>0?m.out.slice(0,k).trim():'';
+  $('#co').textContent=text||'';$('#ct').textContent=out;$('#ce').textContent='AI translation'+(det?' · from '+det:'');$('#ce').hidden=false;$('#cap').hidden=false;
+}
+function startRec(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return;
+  rec=new SR();rec.continuous=true;rec.interimResults=false;rec.lang=navigator.language||'en-US';
+  rec.onresult=e=>{const r=e.results[e.results.length-1];if(r.isFinal&&ch&&ch.readyState==='open')ch.send(JSON.stringify({t:r[0].transcript}))};
+  rec.onend=()=>{if(st!=='idle'&&rec)try{rec.start()}catch(x){}};
+  try{rec.start()}catch(x){}
+}
+function stopRec(){if(rec){const r=rec;rec=null;try{r.stop()}catch(e){}}}
+
+$('#bs').onclick=async()=>{
+  startRec();
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:true})}
+  catch(e){stopRec();say('Allow camera and microphone access, then press Start again.');return}
+  $('#lv').srcObject=stream;find();
+};
+$('#bx').onclick=()=>{tx({t:'stop'});endAll()};
+$('#bn').onclick=()=>{if(st!=='idle'){endCall();find()}};
+$('#rp').onclick=()=>{tx({t:'report'});say('Reported. Skipping to someone new.');endCall();find()};
+$('#tr').onclick=()=>{tOn=!tOn;$('#tr').setAttribute('aria-pressed',tOn);$('#tr').textContent='🌐 AI Translate: '+(tOn?'ON':'OFF');if(!tOn)$('#cap').hidden=true};
+</script>
+</body>
+</html>
